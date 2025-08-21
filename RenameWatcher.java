@@ -1,26 +1,10 @@
-//Copilot Converted code below. watch for errors
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.*;
-import java.util.concurrent.TimeUnit;
+// ... (imports and class definition)
 
 public class RenameWatcher {
-
-    private static final String WATCH_DIR = "C:\\Users\\Public\\Documents\\Waves";
-    private static final String DEST_DIR = "C:\\Users\\Public\\Documents\\ProcessedWaves";
-    private static final String FINISHED_DIR = "C:\\Users\\Public\\Documents\\WavesFinished";
+    // ... (constants and main method)
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        Path watchPath = Paths.get(WATCH_DIR);
-        Files.createDirectories(watchPath);
-        Files.createDirectories(Paths.get(DEST_DIR));
-        Files.createDirectories(Paths.get(FINISHED_DIR));
-
-        WatchService watchService = FileSystems.getDefault().newWatchService();
-        watchPath.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
-
-        System.out.println("Observer started. Monitoring directory for changes...");
+        // ... (setup code)
 
         while (true) {
             WatchKey key = watchService.poll(1, TimeUnit.SECONDS);
@@ -36,11 +20,38 @@ public class RenameWatcher {
                     Path filename = ev.context();
                     Path filePath = watchPath.resolve(filename);
 
-                    System.out.println("New file created: " + filePath);
-                    // Add delay to allow scanner to finish
-                    Thread.sleep(4000);
+                    // <--- PLACE THIS BLOCK HERE
+                    if (filePath.toString().toLowerCase().endsWith(".pdf")) {
+                        System.out.println("New PDF detected: " + filePath);
+                        Thread.sleep(4000); // Wait for scanner to finish
 
-                    // TODO: Barcode extraction and file renaming logic goes here
+                        // THIS IS WHERE YOU CALL YOUR BARCODE METHOD:
+                        String barcode = BarcodeUtils.extractBarcodeFromPDF(filePath.toFile());
+
+                        // Now use barcode to rename and move the file
+                        if (barcode != null && !barcode.isEmpty()) {
+                            String newName = barcode + ".pdf";
+                            Path destPath = Paths.get(DEST_DIR, newName);
+
+                            // If file exists, add timestamp
+                            if (Files.exists(destPath)) {
+                                String baseName = barcode;
+                                String timestamp = String.valueOf(System.currentTimeMillis());
+                                newName = baseName + "_" + timestamp + ".pdf";
+                                destPath = Paths.get(DEST_DIR, newName);
+                            }
+
+                            Files.copy(filePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                            System.out.println("PDF copied and renamed to: " + destPath);
+
+                            // Move to finished directory
+                            Path finishedPath = Paths.get(FINISHED_DIR, newName);
+                            Files.move(destPath, finishedPath, StandardCopyOption.REPLACE_EXISTING);
+                            System.out.println("PDF moved to finished: " + finishedPath);
+                        } else {
+                            System.out.println("No barcode detected in PDF: " + filePath);
+                        }
+                    }
                 }
                 key.reset();
             }
