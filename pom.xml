@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Reconstructed POM for ScannerProjectV2
-  Update:
-    - <groupId> (suggested: com.bluewaterturtle)
-    - <main.class> to match the actual package of RenameWatcher (currently your.package.here.RenameWatcher)
-    - Add / remove dependencies (e.g., logging) as needed.
--->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- ==== Coordinates ==== -->
   <groupId>com.bluewaterturtle</groupId>
   <artifactId>scanner-watcher</artifactId>
   <version>0.1.0-SNAPSHOT</version>
@@ -42,68 +34,48 @@
     <tag>HEAD</tag>
   </scm>
 
-  <!-- ==== Properties ==== -->
   <properties>
-    <!-- Java version (change to 21 if desired) -->
     <java.version>17</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <!-- Reproducible builds (adjust timestamp if you want deterministic jars) -->
     <project.build.outputTimestamp>2025-01-01T00:00:00Z</project.build.outputTimestamp>
 
-    <!-- Dependency versions -->
     <zxing.version>3.5.2</zxing.version>
     <pdfbox.version>2.0.31</pdfbox.version>
     <slf4j.version>2.0.13</slf4j.version>
 
-    <!-- Main class for executable JAR (UPDATE PACKAGE!) -->
-    <main.class>your.package.here.RenameWatcher</main.class>
+    <main.class>com.bluewaterturtle.scanner.RenameWatcher</main.class>
   </properties>
 
-  <!-- ==== Dependency Management ==== -->
   <dependencies>
-    <!-- ZXing core -->
     <dependency>
       <groupId>com.google.zxing</groupId>
       <artifactId>core</artifactId>
       <version>${zxing.version}</version>
     </dependency>
-
-    <!-- ZXing JavaSE helpers -->
     <dependency>
       <groupId>com.google.zxing</groupId>
       <artifactId>javase</artifactId>
       <version>${zxing.version}</version>
     </dependency>
-
-    <!-- PDFBox (rendering pages to images) -->
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
       <version>${pdfbox.version}</version>
     </dependency>
-
-    <!-- (Optional) PDFBox tools if you later need additional utilities -->
-    <!--
     <dependency>
-      <groupId>org.apache.pdfbox</groupId>
-      <artifactId>pdfbox-tools</artifactId>
-      <version>${pdfbox.version}</version>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
-    -->
-
-    <!-- Logging (simple backend). Swap for logback-classic if you prefer. -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>${slf4j.version}</version>
       <scope>runtime</scope>
     </dependency>
-
-    <!-- (Optional) JUnit for future tests -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -112,10 +84,8 @@
     </dependency>
   </dependencies>
 
-  <!-- ==== Build ==== -->
   <build>
     <plugins>
-      <!-- Compiler plugin -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
@@ -126,16 +96,11 @@
         </configuration>
       </plugin>
 
-      <!-- Surefire for tests -->
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
-        <configuration>
-          <useSystemClassLoader>true</useSystemClassLoader>
-        </configuration>
       </plugin>
 
-      <!-- Shade plugin to build an executable fat JAR -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -143,12 +108,9 @@
         <executions>
           <execution>
             <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
+            <goals><goal>shade</goal></goals>
             <configuration>
               <createDependencyReducedPom>true</createDependencyReducedPom>
-              <!-- Set to true cautiously; can remove needed classes -->
               <minimizeJar>false</minimizeJar>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
@@ -160,7 +122,6 @@
         </executions>
       </plugin>
 
-      <!-- Enforcer to catch version / Java mismatches -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
@@ -168,9 +129,7 @@
         <executions>
           <execution>
             <id>enforce-java</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
+            <goals><goal>enforce</goal></goals>
             <configuration>
               <rules>
                 <requireJavaVersion>
@@ -183,29 +142,10 @@
         </executions>
       </plugin>
 
-      <!-- (Optional) Dependency analysis -->
-      <!--
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.6.1</version>
-        <executions>
-          <execution>
-            <id>analyze</id>
-            <goals>
-              <goal>analyze</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-      </plugin>
-      -->
     </plugins>
   </build>
 
-  <!-- ==== (Optional) Profiles ==== -->
   <profiles>
-    <!-- Example profile for a smaller shaded JAR -->
     <profile>
       <id>minimized</id>
       <properties>
@@ -217,9 +157,7 @@
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
+                <goals><goal>shade</goal></goals>
                 <configuration>
                   <minimizeJar>true</minimizeJar>
                 </configuration>
@@ -230,5 +168,4 @@
       </build>
     </profile>
   </profiles>
-
 </project>
