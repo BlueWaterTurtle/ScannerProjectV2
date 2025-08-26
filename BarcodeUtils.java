@@ -1,9 +1,8 @@
+package com.example.barcode;
+
 import com.google.zxing.*;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-// If you want multiple barcode support:
-// import com.google.zxing.multi.GenericMultipleBarcodeReader;
-// import com.google.zxing.multi.MultipleBarcodeReader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
@@ -34,7 +33,6 @@ public final class BarcodeUtils {
             for (int page = 0; page < pageCount; page++) {
                 BufferedImage image = renderer.renderImageWithDPI(page, 200); // TODO: make DPI configurable
                 Optional<String> maybe = extractFirstBarcodeFromImage(image);
-                // Help GC for very large PDFs
                 image.flush();
                 if (maybe.isPresent()) {
                     return maybe;
@@ -85,9 +83,10 @@ public final class BarcodeUtils {
             Result result = reader.decode(bitmap, defaultHints());
             return Optional.ofNullable(result.getText());
         } catch (NotFoundException e) {
-            // Try rotations (simple heuristic) if initial attempt fails
+            // Reset before reusing for rotations
+            reader.reset();
             for (int angle : new int[]{90, 180, 270}) {
-                Optional<String> rotated = tryDecodeRotated(bufferedImage, angle, reader);
+                Optional<String> rotated = tryDecodeRotated(bufferedImage, angle);
                 if (rotated.isPresent()) return rotated;
             }
             return Optional.empty();
@@ -97,38 +96,26 @@ public final class BarcodeUtils {
     }
 
     /**
-     * Extract all barcodes from a BufferedImage. (Currently still single decode; extend to use GenericMultipleBarcodeReader if needed.)
+     * Extract all barcodes from a BufferedImage. (Currently single decode.)
      *
      * @param bufferedImage image
-     * @return list of barcode strings
+     * @return list containing zero or one barcode
      */
     public static List<String> extractAllBarcodesFromImage(BufferedImage bufferedImage) {
         List<String> out = new ArrayList<>();
         extractFirstBarcodeFromImage(bufferedImage).ifPresent(out::add);
-
-        // For multiple barcode support you could do:
-        // BinaryBitmap bitmap = toBinaryBitmap(bufferedImage);
-        // if (bitmap != null) {
-        //     MultiFormatReader baseReader = new MultiFormatReader();
-        //     MultipleBarcodeReader multi = new GenericMultipleBarcodeReader(baseReader);
-        //     try {
-        //         Result[] results = multi.decodeMultiple(bitmap, defaultHints());
-        //         for (Result r : results) {
-        //             out.add(r.getText());
-        //         }
-        //     } catch (NotFoundException ignore) {
-        //     } finally {
-        //         baseReader.reset();
-        //     }
-        // }
+        // TODO: Implement multi-barcode logic with GenericMultipleBarcodeReader if needed
         return out;
     }
 
     private static BinaryBitmap toBinaryBitmap(BufferedImage bufferedImage) {
+        if (bufferedImage == null) return null;
+        // Usually safe; rarely throws. If you want, remove try/catch entirely.
         try {
             LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
             return new BinaryBitmap(new HybridBinarizer(source));
-        } catch (Exception e) {
+        } catch (RuntimeException ex) {
+            // Optional: log debug info here
             return null;
         }
     }
@@ -141,18 +128,24 @@ public final class BarcodeUtils {
         return hints;
     }
 
-    private static Optional<String> tryDecodeRotated(BufferedImage original, int angleDegrees, MultiFormatReader reader) {
+    private static Optional<String> tryDecodeRotated(BufferedImage original, int angleDegrees) {
         BufferedImage rotated = ImageRotationUtil.rotate(original, angleDegrees);
-        BinaryBitmap bitmap = toBinaryBitmap(rotated);
-        rotated.flush();
-        if (bitmap == null) return Optional.empty();
         try {
-            Result result = reader.decode(bitmap, defaultHints());
-            return Optional.ofNullable(result.getText());
-        } catch (NotFoundException e) {
-            return Optional.empty();
+            BinaryBitmap bitmap = toBinaryBitmap(rotated);
+            if (bitmap == null) return Optional.empty();
+            MultiFormatReader reader = new MultiFormatReader();
+            try {
+                Result result = reader.decode(bitmap, defaultHints());
+                return Optional.ofNullable(result.getText());
+            } catch (NotFoundException e) {
+                return Optional.empty();
+            } finally {
+                reader.reset();
+            }
         } finally {
-            reader.reset();
+            if (rotated != original) {
+                rotated.flush();
+            }
         }
     }
 
@@ -163,7 +156,7 @@ public final class BarcodeUtils {
 }
 
 /**
- * Simple image rotation helper. You can replace this with a more efficient implementation.
+ * Simple image rotation helper.
  */
 class ImageRotationUtil {
     public static BufferedImage rotate(BufferedImage src, int angleDegrees) {
@@ -173,7 +166,12 @@ class ImageRotationUtil {
         int h = src.getHeight();
         int newW = (int) Math.round(Math.abs(w * Math.cos(radians)) + Math.abs(h * Math.sin(radians)));
         int newH = (int) Math.round(Math.abs(h * Math.cos(radians)) + Math.abs(w * Math.sin(radians)));
-        BufferedImage dst = new BufferedImage(newW, newH, src.getType());
+
+        int type = src.getType();
+        if (type == BufferedImage.TYPE_CUSTOM || type == 0) {
+            type = BufferedImage.TYPE_INT_ARGB;
+        }
+        BufferedImage dst = new BufferedImage(newW, newH, type);
         var g2 = dst.createGraphics();
         try {
             g2.translate((newW - w) / 2.0, (newH - h) / 2.0);
