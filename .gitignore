@@ -1,0 +1,24 @@
+# Maven build artifacts
+target/
+dependency-reduced-pom.xml
+
+# Working directories created by application
+incoming/
+processing/
+finished/
+failed/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
