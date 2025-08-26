@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Draft POM for ScannerProjectV2
-  Adjust groupId, artifactId, version, mainClass, and any other metadata as needed.
+  Reconstructed POM for ScannerProjectV2
+  Update:
+    - <groupId> (suggested: com.bluewaterturtle)
+    - <main.class> to match the actual package of RenameWatcher (currently your.package.here.RenameWatcher)
+    - Add / remove dependencies (e.g., logging) as needed.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- ==== Project Coordinates (EDIT THESE) ==== -->
-  <groupId>com.example</groupId>
+  <!-- ==== Coordinates ==== -->
+  <groupId>com.bluewaterturtle</groupId>
   <artifactId>scanner-watcher</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>Scanner Project V2</name>
   <description>Directory watcher that renames scanned PDF files based on detected barcodes.</description>
   <url>https://github.com/BlueWaterTurtle/ScannerProjectV2</url>
+
   <licenses>
     <license>
       <name>UNLICENSED</name>
@@ -22,6 +26,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
   <developers>
     <developer>
       <id>BlueWaterTurtle</id>
@@ -29,6 +34,7 @@
       <url>https://github.com/BlueWaterTurtle</url>
     </developer>
   </developers>
+
   <scm>
     <url>https://github.com/BlueWaterTurtle/ScannerProjectV2</url>
     <connection>scm:git:https://github.com/BlueWaterTurtle/ScannerProjectV2.git</connection>
@@ -36,84 +42,100 @@
     <tag>HEAD</tag>
   </scm>
 
-  <!-- ==== Build / Java Configuration ==== -->
+  <!-- ==== Properties ==== -->
   <properties>
-    <!-- Choose your Java version (17 LTS or 21 LTS recommended) -->
+    <!-- Java version (change to 21 if desired) -->
     <java.version>17</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <!-- Reproducible builds -->
+
+    <!-- Reproducible builds (adjust timestamp if you want deterministic jars) -->
     <project.build.outputTimestamp>2025-01-01T00:00:00Z</project.build.outputTimestamp>
+
     <!-- Dependency versions -->
     <zxing.version>3.5.2</zxing.version>
     <pdfbox.version>2.0.31</pdfbox.version>
-    <!-- For shade plugin -->
+    <slf4j.version>2.0.13</slf4j.version>
+
+    <!-- Main class for executable JAR (UPDATE PACKAGE!) -->
     <main.class>your.package.here.RenameWatcher</main.class>
   </properties>
 
-  <!-- ==== Dependencies ==== -->
+  <!-- ==== Dependency Management ==== -->
   <dependencies>
-    <!-- ZXing core (barcode decoding) -->
+    <!-- ZXing core -->
     <dependency>
       <groupId>com.google.zxing</groupId>
       <artifactId>core</artifactId>
       <version>${zxing.version}</version>
     </dependency>
-    <!-- ZXing Java SE helpers (BufferedImageLuminanceSource etc.) -->
+
+    <!-- ZXing JavaSE helpers -->
     <dependency>
       <groupId>com.google.zxing</groupId>
       <artifactId>javase</artifactId>
       <version>${zxing.version}</version>
     </dependency>
 
-    <!-- PDFBox for rendering PDF pages to images -->
+    <!-- PDFBox (rendering pages to images) -->
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
       <version>${pdfbox.version}</version>
     </dependency>
 
-    <!-- (Optional) Logging façade & simple backend (uncomment if you add logging) -->
+    <!-- (Optional) PDFBox tools if you later need additional utilities -->
     <!--
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>2.0.16</version>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox-tools</artifactId>
+      <version>${pdfbox.version}</version>
     </dependency>
+    -->
+
+    <!-- Logging (simple backend). Swap for logback-classic if you prefer. -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>2.0.16</version>
+      <version>${slf4j.version}</version>
       <scope>runtime</scope>
     </dependency>
-    -->
 
     <!-- (Optional) JUnit for future tests -->
-    <!--
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.11.0</version>
+      <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
-    -->
   </dependencies>
 
-  <!-- ==== Build Configuration ==== -->
+  <!-- ==== Build ==== -->
   <build>
     <plugins>
-      <!-- Compile with the configured Java version -->
+      <!-- Compiler plugin -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
         <configuration>
           <release>${java.version}</release>
+          <encoding>${project.build.sourceEncoding}</encoding>
+          <parameters>true</parameters>
         </configuration>
       </plugin>
 
-      <!-- Produce a single executable (fat) JAR including dependencies -->
+      <!-- Surefire for tests -->
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <useSystemClassLoader>true</useSystemClassLoader>
+        </configuration>
+      </plugin>
+
+      <!-- Shade plugin to build an executable fat JAR -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -125,43 +147,35 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <!-- Set to true cautiously; can remove needed classes -->
+              <minimizeJar>false</minimizeJar>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>${main.class}</mainClass>
                 </transformer>
               </transformers>
-              <!-- Prevent duplicate service/resource merge issues -->
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
             </configuration>
           </execution>
         </executions>
       </plugin>
 
-      <!-- (Optional) Enforce dependency convergence / plugin versions -->
+      <!-- Enforcer to catch version / Java mismatches -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.4.1</version>
         <executions>
           <execution>
-            <id>enforce</id>
-            <goals><goal>enforce</goal></goals>
+            <id>enforce-java</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[${java.version},)</version>
+                  <version>[17,)</version>
                 </requireJavaVersion>
-                <dependencyConvergence/>
               </rules>
               <fail>true</fail>
             </configuration>
@@ -169,33 +183,51 @@
         </executions>
       </plugin>
 
-      <!-- (Optional) Run tests with JUnit 5 if you add them -->
+      <!-- (Optional) Dependency analysis -->
       <!--
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
-        <configuration>
-          <useModulePath>false</useModulePath>
-        </configuration>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
       </plugin>
       -->
     </plugins>
   </build>
 
-  <!-- ==== Profiles (optional examples) ==== -->
+  <!-- ==== (Optional) Profiles ==== -->
   <profiles>
-    <!-- Profile for building with Java 21 if desired -->
+    <!-- Example profile for a smaller shaded JAR -->
     <profile>
-      <id>java21</id>
-      <activation>
-        <property>
-          <name>useJava21</name>
-        </property>
-      </activation>
+      <id>minimized</id>
       <properties>
-        <java.version>21</java.version>
+        <shade.minimize>true</shade.minimize>
       </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <minimizeJar>true</minimizeJar>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
