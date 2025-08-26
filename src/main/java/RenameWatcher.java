@@ -4,6 +4,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
@@ -72,7 +73,7 @@ public class RenameWatcher {
                     }
 
                     if (kind == ENTRY_CREATE) {
-                        Path relative = castContext(event);
+                        Path relative = (Path) event.context();
                         Path createdPath = WATCH_DIR.resolve(relative);
                         if (isPdf(createdPath)) {
                             handleNewPdf(createdPath);
@@ -102,8 +103,9 @@ public class RenameWatcher {
 
             String barcode = null;
             for (int attempt = 0; attempt <= MAX_DECODE_RETRIES; attempt++) {
-                barcode = BarcodeUtils.extractBarcodeFromPDF(file.toFile()); // adjust if Optional
-                if (barcode != null && !barcode.isBlank()) {
+                Optional<String> barcodeOpt = BarcodeUtils.extractFirstBarcodeFromPDF(file.toFile());
+                if (barcodeOpt.isPresent()) {
+                    barcode = barcodeOpt.get();
                     break;
                 }
                 if (attempt < MAX_DECODE_RETRIES) {
@@ -185,10 +187,5 @@ public class RenameWatcher {
     private static String sanitizeForFilename(String raw) {
         // Remove characters not suitable for filenames
         return raw.replaceAll("[\\\\/:*?\"<>|]", "_");
-    }
-
-    @SuppressWarnings("unchecked")
-    private static WatchEvent<Path> castContext(WatchEvent<?> event) {
-        return (WatchEvent<Path>) event;
     }
 }
